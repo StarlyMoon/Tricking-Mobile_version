@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -34,6 +35,1069 @@
            ========================================== */
         .hidden { display: none !important; }
         .fade-out { opacity: 0 !important; pointer-events: none !important; }
+        .fade-in { opacity: 1 !important; pointer-events: auto !important; }
+        
+        .transition-base { transition: opacity var(--t-fade) ease, transform var(--t-fade) ease, background var(--t-fade) ease, filter 2s ease; }
+        
+        .stage-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; 
+            height: 100vh; height: 100dvh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; opacity: 0; pointer-events: none; transition: opacity var(--t-fade) ease;
+        }
+
+        /* ==========================================
+           3. UI 元件樣式
+           ========================================== */
+        .action-btn {
+            padding: 15px 35px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 2px; font-size: 18px;
+            transition: all 0.2s ease; border: 1px solid transparent; color: #fff;
+            backdrop-filter: blur(4px); outline: none; pointer-events: auto !important;
+        }
+        .action-btn:active { transform: scale(0.95); }
+        
+        .btn-blue { background: rgba(31, 111, 235, 0.8); border-color: rgba(88, 166, 255, 0.5); box-shadow: 0 0 15px rgba(31, 111, 235, 0.4); }
+        .btn-blue:hover { background: rgba(56, 139, 253, 0.9); box-shadow: 0 0 25px rgba(88, 166, 255, 0.6); }
+        
+        .btn-red { background: rgba(218, 54, 51, 0.8); border-color: rgba(248, 81, 73, 0.5); box-shadow: 0 0 15px rgba(218, 54, 51, 0.4); }
+        .btn-red:hover { background: rgba(248, 81, 73, 0.9); box-shadow: 0 0 25px rgba(248, 81, 73, 0.6); }
+
+        /* 🚀 隱形的跳過感應區 (右上角) */
+        #skip-zone {
+            position: fixed; top: 0; right: 0; width: 25vw; height: 20vh; min-width: 90px; min-height: 90px;
+            z-index: 99999; cursor: default;
+        }
+
+        /* ==========================================
+           4. 遊戲場景設計
+           ========================================== */
+        #bg-layer {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; height: 100dvh; z-index: 1;
+            background-image: url('https://img.freepik.com/free-photo/beautiful-mountains-landscape_23-2151151074.jpg?semt=ais_hybrid&w=740&q=80');
+            background-size: cover; background-position: center; filter: brightness(1.2);
+            opacity: 0; transition: opacity 2s ease-in-out, filter 3s ease-in-out; pointer-events: none;
+        }
+
+        #main-box {
+            position: relative; width: 90%; max-width: 500px; padding: 30px 20px 25px; z-index: 5;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); 
+            border-radius: 12px; border: 1px solid rgba(88, 166, 255, 0.2); 
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8); text-align: center;
+            transition: all 1.5s ease;
+        }
+        .theme-success {
+            background: rgba(0, 0, 0, 0.3) !important; backdrop-filter: blur(2px) !important; 
+            border: 1px solid rgba(255, 215, 0, 0.3) !important; box-shadow: 0 0 40px rgba(255, 215, 0, 0.15) !important;
+        }
+        
+        /* ERROR 狀態專屬微調 */
+        .theme-error #percent-text { color: var(--error-red) !important; font-size: 32px !important; letter-spacing: 4px; }
+        .theme-error #hint { color: var(--error-red) !important; font-weight: bold; margin-top: 10px; }
+        .theme-error #progress-container { display: none !important; }
+        .theme-error #retry-btn { margin-top: 15px !important; } 
+
+        #percent-text {
+            font-size: 28px; font-weight: 800; color: var(--tech-blue); line-height: 1.2;
+            white-space: pre; letter-spacing: 2px; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+            transition: color 0.5s ease;
+        }
+        .percent-sign { display: inline-block; width: 0; overflow: visible; text-align: left; }
+        
+        #progress-container { width: 100%; transition: opacity 0.5s ease; }
+        .bar-bg { width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; margin: 20px 0; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        #bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--tech-blue-dark), var(--tech-blue)); transition: width 0.3s ease-out, background 1s ease; }
+        
+        #hint { font-size: 14px; color: #8b949e; margin-top: 10px; min-height: 20px; display: flex; justify-content: center; align-items: center; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        .loading-dots { display: inline-block; width: 1.5em; text-align: left; vertical-align: bottom; }
+        
+        #retry-btn { margin-top: 25px; transition: margin-top 0.3s ease; }
+
+        /* 對白與倒數區 */
+        #center-text {
+            color: #fff; font-weight: bold; text-align: center; padding: 0 20px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9); transition: opacity 0.5s ease; 
+        }
+        .txt-normal { font-size: 32px; letter-spacing: 2px; white-space: nowrap; }
+        .txt-dialogue { font-size: clamp(26px, 7vw, 42px); white-space: normal; word-break: keep-all; text-shadow: 0 4px 15px rgba(0,0,0,0.8); }
+        .txt-countdown { font-size: clamp(48px, 20vw, 80px); white-space: nowrap; }
+
+        /* Rickroll 區 */
+        #rickroll-stage { z-index: 50; background: #000; }
+        #click-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 51; }
+        #rick-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: clamp(30px, 8vw, 80px); font-weight: bold; color: #fff;
+            text-shadow: 0 4px 20px #000, 0 0 10px rgba(0,0,0,0.8); white-space: nowrap; z-index: 52;
+            transition: opacity 1.5s ease;
+        }
+
+        /* 跑馬燈區 */
+        #credits-stage { z-index: 60; background: #000; overflow: hidden; pointer-events: auto; }
+        #credits-container { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
+        #credits-title { height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; font-size: clamp(40px, 10vw, 100px); font-weight: bold; }
+        #credits-list { text-align: center; font-size: 20px; line-height: 2.5; color: var(--text-light); padding-bottom: 10vh; font-weight: normal; padding-left: 10px; padding-right: 10px;}
+        .credit-role { color: var(--text-light); font-weight: normal; }
+        
+        #secret-trigger { 
+            cursor: default; color: inherit; outline: none; 
+            padding: 15px 10px; margin: -15px -10px; display: inline-block; position: relative; z-index: 65;
+        }
+
+        /* 結局區 */
+        #ending-stage { z-index: 100; background: #000; }
+        
+        #ending-content {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; text-align: center; pointer-events: auto; padding: 0 20px;
+        }
+
+        #alt-f4-text {
+            color: #fff; font-size: clamp(24px, 6vw, 60px); font-weight: bold; letter-spacing: 5px;
+            text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(88,166,255,0.6); animation: pulse 2s infinite;
+            text-align: center; padding: 20px;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+
+        .end-title { font-size: clamp(36px, 10vw, 80px); color: #fff; font-weight: bold; letter-spacing: 5px; margin-bottom: 50px; text-shadow: 0 0 30px rgba(255,255,255,0.6); }
+        
+        /* 懲罰區 */
+        #punish-stage { z-index: 999; background: #0a0a0a; color: var(--error-red); font-size: clamp(28px, 7vw, 60px); font-weight: 900; text-align: center; line-height: 1.5; padding: 20px; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="skip-zone"></div>
+    <div id="bg-layer" class="fade-out"></div>
+
+    <div id="main-box" class="transition-base fade-in">
+        <div id="percent-text">0<span class="percent-sign">%</span></div>
+        <div id="progress-container"><div class="bar-bg"><div id="bar-fill"></div></div></div>
+        <div id="hint">正在載入遊戲引擎<span class="loading-dots"></span></div>
+        <button id="retry-btn" class="action-btn btn-red fade-out hidden">重新連線</button>
+    </div>
+
+    <div id="start-stage" class="stage-overlay fade-out">
+        <button id="start-game-btn" class="action-btn btn-blue">開始遊戲</button>
+    </div>
+
+    <div id="dialogue-stage" class="stage-overlay fade-out">
+        <div id="center-text" class="txt-normal"></div>
+    </div>
+
+    <div id="rickroll-stage" class="stage-overlay fade-out">
+        <div id="yt-player" style="width: 100%; height: 100%;"></div>
+        <div id="click-blocker"></div>
+        <div id="rick-text" class="fade-out">👻恭喜你又被騙了👻</div>
+    </div>
+
+    <div id="credits-stage" class="stage-overlay fade-out">
+        <div id="credits-container">
+            <div id="credits-title">謝謝遊玩</div>
+            <div id="credits-list"></div>
+        </div>
+    </div>
+
+    <div id="ending-stage" class="stage-overlay fade-out">
+        <div id="ending-content"></div>
+    </div>
+
+    <div id="punish-stage" class="stage-overlay fade-out"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+/**
+ * Interactive Prank Game Loader - Pure Narrative Secret Edition
+ */
+
+window.GameReset = function() {
+    try { window.top.location.reload(); } catch(e) {}
+    try { window.location.reload(); } catch(e) {}
+    
+    // 軟重置 fallback
+    InputManager.errors = 0;
+    InputManager.konamiIdx = 0;
+    FSM.ctx.creditsSkipped = false;
+    document.querySelectorAll('.stage-overlay').forEach(el => {
+        el.classList.remove('fade-in');
+        el.classList.add('fade-out', 'hidden');
+    });
+    document.getElementById('bg-layer').classList.remove('fade-in');
+    document.getElementById('bg-layer').classList.add('fade-out');
+    document.getElementById('bg-layer').style.filter = 'brightness(1.2)';
+    
+    FSM.transition('LOAD1');
+};
+
+// ==========================================
+// 1. CONFIG 模組
+// ==========================================
+const CONFIG = {
+    TIME: {
+        FADE: 800,
+        NINES_FAST: 300, NINES_SLOW: 2000,
+        WAIT_ERROR: 1200, WAIT_GAME: 60000, WAIT_RICK: 18000,
+        PUNISH: 1500, CREDIT_DELAY: 3000,
+        SECRET_DELAY: 10000 
+    },
+    KEYS: {
+        WHITELIST: new Set(['Alt', 'F4', 'Escape', 'F11', 'AudioVolumeUp', 'AudioVolumeDown', 'AudioVolumeMute']),
+        KONAMI: ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight']
+    },
+    TEXT: {
+        HINTS: ["正在載入物理引擎", "正在載入細節紋理", "正在載入光影", "正在載入世界地形", "正在載入背景音樂與音效", "正在同步多人連線數據", "遊戲執行中"],
+        ERR_PCT: "ERROR", ERR_HINT: "伺服器無回應 (Code: 0x8004210a)",
+        READY: "資源載入完畢...", REWARD: "正在加載獎勵", REWARD_READY: "獎勵加載完成...",
+        FAKE_GAME: "正在進入遊戲", DIALOGUES: ["👻恭喜你被騙了👻", "既然你這麼有毅力", "最後的獎勵就歸你"],
+        COUNTDOWN: ["3", "2", "1"],
+        PUNISH: (c) => c < 3 ? `怎麼亂按 ${c}/3` : `怎麼亂按 3/3<br><br>全部重來！`,
+        END_NORMAL: "《即將開始…》", END_SECRET: "🎊恭喜你發現彩蛋🎊"
+    },
+    CREDITS: [
+        "靈感爆炸來源師","宇宙最強總製作人","遊戲核心架構師","系統設計師","UI／UX 設計師",
+        "世界觀建構師","讀條速度調整師","99% 停滯控制師","假進度演算法師","百分比顯示欺騙師",
+        "讓人以為快好了師","其實完全還沒開始師","玩家耐心測試師","時間蒸發設計師",
+        "「再一下就好」催眠師","伺服器假死模擬師","希望製造師","信任重建師",
+        "其實根本沒有遊戲師","整個都是假的師","你還在等師","但還是不想關掉師",
+        { role: "鬼畜入口設計師", secret: true },
+        "主畫面其實有東西可以按師","看起來不能點不代表不能點師","有耐心的人才進得去師",
+        "倒數三秒欺騙師","結局反轉設計師","影片強制播放師","無法暫停設計師",
+        "逃不掉機制工程師","Bug 無限生成器","Bug 偶爾修好的人","免費但代價是時間師",
+        "隨緣行銷大師","還沒關掉頁面的你師","明知道被騙還繼續看師",
+        { role: "👁 有東西一直在那裡 👁", name: "" },
+        "只是你還沒注意到師",
+        "覺得只要加師就很專業師"
+    ].map(c => {
+        if (typeof c === 'string') return { role: c, name: "小菜車" };
+        return { role: c.role, name: c.name !== undefined ? c.name : "小菜車", secret: c.secret || false };
+    })
+};
+
+// ==========================================
+// 2. DOM 模組
+// ==========================================
+const DOM = {
+    cache: {},
+    init() {
+        const ids = ['bg-layer', 'main-box', 'percent-text', 'bar-fill', 'progress-container', 'hint', 'retry-btn', 
+                     'start-stage', 'start-game-btn', 'dialogue-stage', 'center-text', 'rickroll-stage', 'rick-text', 
+                     'credits-stage', 'credits-container', 'credits-list', 'ending-stage', 'ending-content', 
+                     'punish-stage', 'skip-zone'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) this.cache[id] = el;
+        });
+    },
+    get(id) { return this.cache[id]; }
+};
+
+// ==========================================
+// 3. UI Controller
+// ==========================================
+const UI = {
+    show(id, bypassPointer = false) {
+        const el = DOM.get(id);
+        if(!el) return;
+        el.classList.remove('hidden', 'fade-out');
+        void el.offsetWidth;
+        el.classList.add('fade-in');
+        if (bypassPointer) el.style.pointerEvents = 'none';
+    },
+    hide(id) {
+        const el = DOM.get(id);
+        if(!el) return;
+        el.classList.remove('fade-in');
+        el.classList.add('fade-out');
+    },
+    forceHide(id) {
+        const el = DOM.get(id);
+        if(!el) return;
+        el.classList.remove('fade-in');
+        el.classList.add('fade-out', 'hidden');
+    },
+    setText(id, text) { DOM.get(id).textContent = text; },
+    setHTML(id, html) { DOM.get(id).innerHTML = html; },
+    setStyleClass(id, className) { DOM.get(id).className = className; },
+    setTheme(type) {
+        const box = DOM.get('main-box');
+        box.classList.remove('theme-error', 'theme-success');
+        
+        DOM.get('percent-text').style.color = 'var(--tech-blue)';
+        DOM.get('bar-fill').style.background = 'linear-gradient(90deg, var(--tech-blue-dark), var(--tech-blue))';
+        DOM.get('hint').style.color = '#8b949e';
+        
+        if (type === 'ERROR') {
+            box.classList.add('theme-error');
+        } else if (type === 'SUCCESS') {
+            box.classList.add('theme-success');
+            DOM.get('percent-text').style.color = 'var(--success-gold)';
+            DOM.get('bar-fill').style.background = 'var(--success-gold)';
+        }
+    },
+    updateProgress(val) {
+        DOM.get('bar-fill').style.width = `${val}%`;
+        this.setHTML('percent-text', `${Math.floor(val)}<span class="percent-sign">%</span>`);
+    },
+    buildCredits() {
+        const html = CONFIG.CREDITS.map(c => {
+            const namePart = c.name ? `：${c.name}` : '';
+            return c.secret 
+                ? `<span><span id="secret-trigger" tabindex="-1">繼續遊戲</span>${c.role}${namePart}</span><br>`
+                : `<span>${c.role}${namePart}</span><br>`;
+        }).join('');
+        this.setHTML('credits-list', html);
+        
+        document.getElementById('secret-trigger').onclick = () => {
+            FSM.transition('SECOND_LAYER'); 
+        };
+    }
+};
+
+// ==========================================
+// 4. TaskManager
+// ==========================================
+class AbortError extends Error { constructor() { super('Aborted'); this.name = 'AbortError'; } }
+
+const TaskManager = {
+    timers: new Set(), rafs: new Set(), flowId: 0,
+    setTimeout(fn, ms) { const id = setTimeout(() => { this.timers.delete(id); fn(); }, ms); this.timers.add(id); return id; },
+    setInterval(fn, ms) { const id = setInterval(fn, ms); this.timers.add(id); return id; },
+    clearInterval(id) { clearInterval(id); this.timers.delete(id); },
+    requestAnimationFrame(fn) { const id = requestAnimationFrame(() => { this.rafs.delete(id); fn(); }); this.rafs.add(id); return id; },
+    abortAll() {
+        this.timers.forEach(clearTimeout); this.timers.clear();
+        this.rafs.forEach(cancelAnimationFrame); this.rafs.clear();
+        this.flowId++;
+    },
+    async sleep(ms) {
+        const id = this.flowId;
+        await new Promise(r => this.setTimeout(r, ms));
+        if (id !== this.flowId) throw new AbortError();
+    }
+};
+
+// ==========================================
+// 5. ProgressSystem
+// ==========================================
+const ProgressSystem = {
+    run(isReward, onComplete) {
+        let val = 0, nines = 0, dotCount = 0;
+        UI.setTheme('NORMAL');
+        UI.forceHide('retry-btn'); 
+
+        const ivDots = TaskManager.setInterval(() => {
+            dotCount = (dotCount + 1) % 4;
+            const text = isReward ? CONFIG.TEXT.REWARD : (val >= 99 ? CONFIG.TEXT.HINTS[6] : CONFIG.TEXT.HINTS[Math.min(Math.floor(val/100*7), 6)]);
+            UI.setHTML('hint', `${text}<span class="loading-dots">${".".repeat(dotCount)}</span>`);
+        }, 400);
+
+        const ivBar = TaskManager.setInterval(() => {
+            val = Math.min(99, val + (Math.random() * 0.8 + 0.2));
+            UI.updateProgress(val);
+            if (val >= 99) {
+                TaskManager.clearInterval(ivBar);
+                const stepNines = () => {
+                    nines++;
+                    const nStr = "9".repeat(nines);
+                    UI.setHTML('percent-text', nines <= 7 ? `99.${nStr}<span class="percent-sign">%</span>` : `99.${nStr.substring(0,7)}\n` + nStr.substring(7).match(/.{1,10}/g).join('\n') + '<span class="percent-sign">%</span>');
+                    if (nines < 97) TaskManager.setTimeout(stepNines, nines < 92 ? CONFIG.TIME.NINES_FAST : CONFIG.TIME.NINES_SLOW);
+                    else TaskManager.setTimeout(onComplete, CONFIG.TIME.WAIT_ERROR);
+                };
+                TaskManager.setTimeout(stepNines, 1000);
+            }
+        }, 500);
+    }
+};
+
+// ==========================================
+// 6. InputManager
+// ==========================================
+const InputManager = {
+    errors: 0,
+    lastTime: Date.now(),
+    konamiIdx: 0,
+    
+    init() {
+        const updateTime = () => { this.lastTime = Date.now(); };
+        document.addEventListener('mousemove', updateTime);
+        document.addEventListener('touchstart', updateTime, { passive: true });
+
+        const punishAction = () => {
+            // 恢復跑馬燈階段的懲罰！只要亂點就會彈出警告！
+            this.errors++;
+            UI.setHTML('punish-stage', CONFIG.TEXT.PUNISH(this.errors));
+            UI.show('punish-stage');
+
+            if (this.errors < 3) {
+                TaskManager.setTimeout(() => UI.hide('punish-stage'), 1000);
+            } else {
+                FSM.transition('PUNISH');
+            }
+        };
+
+        document.addEventListener('keydown', e => {
+            updateTime();
+            // 把 CREDITS 拔掉，代表在 CREDITS 階段鍵盤亂按也會被懲罰
+            if (['END_NORMAL', 'END_SECRET', 'PUNISH', 'SECOND_LAYER'].includes(FSM.current)) return;
+            if (e.altKey && e.key.toLowerCase() === 'q') { e.preventDefault(); FSM.skip(); return; }
+
+            if (e.key === CONFIG.KEYS.KONAMI[this.konamiIdx]) {
+                this.konamiIdx++;
+                if (this.konamiIdx === CONFIG.KEYS.KONAMI.length) {
+                    this.konamiIdx = 0;
+                    UI.setHTML('punish-stage', "你是不是太閒了");
+                    UI.show('punish-stage');
+                    TaskManager.setTimeout(() => { if (FSM.current !== 'PUNISH') UI.hide('punish-stage'); }, 2000);
+                    return; 
+                }
+            } else {
+                this.konamiIdx = 0; 
+            }
+
+            if (CONFIG.KEYS.WHITELIST.has(e.key) || e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || (e.ctrlKey && ['+','=','-'].includes(e.key))) return;
+            
+            e.preventDefault();
+            punishAction();
+        });
+
+        document.addEventListener('touchstart', e => {
+            updateTime();
+            // 把 CREDITS 拔掉，代表在 CREDITS 階段螢幕亂點也會被懲罰
+            if (['END_NORMAL', 'END_SECRET', 'PUNISH', 'SECOND_LAYER'].includes(FSM.current)) return;
+            
+            const isInteractive = e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('#skip-zone') || e.target.id === 'secret-trigger';
+            if (isInteractive) return;
+
+            e.preventDefault();
+            punishAction();
+        }, { passive: false });
+        
+        const skipZone = DOM.get('skip-zone');
+        const handleSkip = (e) => {
+            e.preventDefault(); e.stopPropagation(); 
+            FSM.skip();
+        };
+        if(skipZone){
+            skipZone.addEventListener('mousedown', handleSkip, { capture: true });
+            skipZone.addEventListener('touchstart', handleSkip, { capture: true, passive: false });
+        }
+    }
+};
+
+// ==========================================
+// 7. VideoManager
+// ==========================================
+const VideoManager = {
+    player: null, ready: false, started: false,
+    init() {
+        window.onYouTubeIframeAPIReady = () => {
+            this.player = new YT.Player('yt-player', {
+                videoId: 'dQw4w9WgXcQ',
+                playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, modestbranding: 1, rel: 0 },
+                events: {
+                    onStateChange: (e) => {
+                        if (e.data === YT.PlayerState.PLAYING && !this.started && FSM.current === 'RICKROLL') {
+                            this.started = true;
+                        }
+                    }
+                }
+            });
+        };
+    },
+    grantAuth() {
+        if (this.player && this.player.playVideo) {
+            this.player.mute(); this.player.playVideo();
+            setTimeout(() => { this.player.pauseVideo(); this.player.unMute(); this.player.seekTo(0); }, 150);
+        }
+    },
+    play() { if (this.player && this.player.playVideo) this.player.playVideo(); },
+    fade() {
+        if (!this.player || !this.player.getVolume) return;
+        let v = this.player.getVolume();
+        if (v <= 0) { this.player.pauseVideo(); return; }
+        const step = v / (3000 / 50); 
+        const iv = TaskManager.setInterval(() => {
+            v -= step;
+            if (v <= 0) { this.player.setVolume(0); this.player.pauseVideo(); TaskManager.clearInterval(iv); }
+            else { this.player.setVolume(v); }
+        }, 50);
+    }
+};
+
+// ==========================================
+// 8. Game FSM
+// ==========================================
+const FSM = {
+    current: null, ctx: { creditsY: 0, speed: 1, maxH: 0, creditsSkipped: false },
+
+    states: {
+        LOAD1: {
+            enter() { UI.show('main-box'); ProgressSystem.run(false, () => FSM.transition('ERROR')); },
+            skip: 'ERROR'
+        },
+        ERROR: {
+            enter() { UI.setTheme('ERROR'); UI.setText('percent-text', CONFIG.TEXT.ERR_PCT); UI.setText('hint', CONFIG.TEXT.ERR_HINT); UI.show('retry-btn'); },
+            skip: 'LOAD2'
+        },
+        LOAD2: {
+            enter() { ProgressSystem.run(false, () => FSM.transition('READY')); },
+            skip: 'READY'
+        },
+        READY: {
+            async enter() {
+                try {
+                    UI.setTheme('SUCCESS'); 
+                    UI.setHTML('percent-text', '100<span class="percent-sign">%</span>'); 
+                    DOM.get('bar-fill').style.width = '100%'; // 強制把進度條補滿100%
+                    UI.setText('hint', CONFIG.TEXT.READY);
+                    
+                    await TaskManager.sleep(2000); UI.hide('main-box');
+                    await TaskManager.sleep(CONFIG.TIME.FADE); DOM.get('main-box').classList.add('hidden');
+                    UI.show('bg-layer'); UI.show('start-stage');
+                } catch(e) {}
+            }, skip: 'FAKE_GAME'
+        },
+        FAKE_GAME: {
+            async enter() {
+                try {
+                    UI.hide('start-stage'); UI.show('dialogue-stage'); UI.setStyleClass('center-text', 'txt-normal');
+                    let dc = 0; 
+                    
+                    const fakeGameTimer = TaskManager.setInterval(() => { 
+                        dc=(dc+1)%4; 
+                        UI.setHTML('center-text', `${CONFIG.TEXT.FAKE_GAME}<span class="loading-dots">${".".repeat(dc)}</span>`); 
+                    }, 400);
+                    
+                    await TaskManager.sleep(CONFIG.TIME.WAIT_GAME);
+                    
+                    TaskManager.clearInterval(fakeGameTimer);
+                    
+                    UI.hide('center-text'); await TaskManager.sleep(500);
+                    
+                    UI.setStyleClass('center-text', 'txt-dialogue');
+                    for (let i=0; i<CONFIG.TEXT.DIALOGUES.length; i++) {
+                        UI.setText('center-text', CONFIG.TEXT.DIALOGUES[i]); UI.show('center-text');
+                        await TaskManager.sleep(i===0 ? 10000 : 2000); 
+                        UI.hide('center-text'); await TaskManager.sleep(500);
+                    }
+                    FSM.transition('REWARD_LOAD');
+                } catch(e) {}
+            }, skip: 'REWARD_LOAD'
+        },
+        REWARD_LOAD: {
+            enter() { UI.hide('dialogue-stage'); UI.show('main-box'); DOM.get('main-box').classList.remove('hidden'); ProgressSystem.run(true, () => FSM.transition('COUNTDOWN')); },
+            skip: 'COUNTDOWN'
+        },
+        COUNTDOWN: {
+            async enter() {
+                try {
+                    UI.setTheme('SUCCESS'); 
+                    UI.setHTML('percent-text', '100<span class="percent-sign">%</span>'); 
+                    DOM.get('bar-fill').style.width = '100%'; // 強制把進度條補滿100%
+                    UI.setText('hint', CONFIG.TEXT.REWARD_READY);
+                    
+                    await TaskManager.sleep(1000); UI.hide('main-box'); await TaskManager.sleep(1000);
+                    UI.show('dialogue-stage'); UI.setStyleClass('center-text', 'txt-countdown');
+                    for (let num of CONFIG.TEXT.COUNTDOWN) {
+                        UI.setText('center-text', num); UI.show('center-text'); await TaskManager.sleep(1000);
+                        UI.hide('center-text'); await TaskManager.sleep(500);
+                    }
+                    FSM.transition('RICKROLL');
+                } catch(e) {}
+            }, skip: null
+        },
+        RICKROLL: {
+            enter() {
+                UI.hide('dialogue-stage'); UI.hide('bg-layer'); UI.show('rickroll-stage');
+                VideoManager.play();
+                
+                TaskManager.setTimeout(() => UI.show('rick-text'), 500);
+                TaskManager.setTimeout(() => FSM.transition('CREDITS'), CONFIG.TIME.WAIT_RICK);
+            }, skip: 'CREDITS'
+        },
+        CREDITS: {
+            enter() {
+                UI.hide('rick-text'); UI.show('credits-stage');
+                FSM.ctx.creditsY = 0; 
+                FSM.ctx.creditsSkipped = false;
+                TaskManager.setTimeout(() => { 
+                    FSM.ctx.maxH = DOM.get('credits-container').offsetHeight; 
+                    FSM.scroll(performance.now()); // 改用真實時間計算
+                }, CONFIG.TIME.CREDIT_DELAY);
+            }, skip() { return; } 
+        },
+        END_NORMAL: {
+            enter() {
+                VideoManager.fade(); UI.hide('credits-stage');
+                UI.setHTML('ending-content', `<div class="end-title">${CONFIG.TEXT.END_NORMAL}</div><button class="action-btn btn-red" id="normal-replay-btn">再玩一次</button>`);
+                UI.show('ending-stage'); DOM.get('ending-stage').style.background = '#000';
+                
+                TaskManager.setTimeout(() => {
+                    const btn = document.getElementById('normal-replay-btn');
+                    if (btn) btn.onclick = () => window.GameReset();
+                }, 100);
+            }, skip: null
+        },
+        END_SECRET: {
+            async enter() {
+                try {
+                    VideoManager.fade(); UI.hide('rickroll-stage'); UI.hide('credits-stage');
+                    UI.setHTML('ending-content', ''); 
+                    UI.show('bg-layer'); UI.show('ending-stage'); DOM.get('ending-stage').style.background = 'transparent';
+                    
+                    await TaskManager.sleep(CONFIG.TIME.SECRET_DELAY); 
+                    UI.setHTML('ending-content', `<div id="alt-f4-text">${CONFIG.TEXT.END_SECRET}</div>`);
+                } catch(e) {}
+            }, skip: null
+        },
+        SECOND_LAYER: {
+            async enter() {
+                try {
+                    VideoManager.fade(); UI.hide('rickroll-stage'); UI.hide('credits-stage');
+                    
+                    const bg = DOM.get('bg-layer');
+                    bg.style.filter = 'brightness(0.4) grayscale(0.9)';
+                    UI.show('bg-layer');
+                    
+                    UI.setHTML('ending-content', `<div id="l2-text" class="txt-dialogue transition-base fade-out" style="color:#fff; text-align:center; padding:20px;"></div>`);
+                    UI.show('ending-stage'); DOM.get('ending-stage').style.background = 'transparent';
+
+                    const txt = document.getElementById('l2-text');
+                    const say = async (t, delay=2000) => { txt.innerHTML = t; txt.classList.remove('fade-out'); txt.classList.add('fade-in'); if(delay>0) await TaskManager.sleep(delay); };
+                    const hide = async (delay=500) => { txt.classList.remove('fade-in'); txt.classList.add('fade-out'); if(delay>0) await TaskManager.sleep(delay); };
+
+                    await TaskManager.sleep(1500);
+                    await say("你終於來到這裡", 2500); await hide();
+                    await say("這裡沒有提示", 2000); await hide();
+                    await say("只有規則", 2000); await hide();
+
+                    await say("不要動", 5000); 
+                    await hide(500);
+
+                    await say("可以動了", 1500); 
+                    await hide(500);
+
+                    await TaskManager.sleep(1000);
+
+                    // 🕒 台詞修改在這裡！
+                    await say("你不需要再遵守規則了", 2000); await hide();
+                    await say("恭喜你", 3000); await hide();
+
+                    UI.setHTML('ending-content', `
+                        <div class="end-title">你通關了</div>
+                        <button class="action-btn btn-blue fade-out" id="real-btn">再玩一次</button>
+                    `);
+
+                    TaskManager.setTimeout(()=>{
+                        const b = document.getElementById('real-btn');
+                        if(b) { 
+                            b.classList.remove('fade-out'); b.classList.add('fade-in');
+                            b.onclick = () => window.GameReset();
+                        }
+                    }, 500);
+
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.log("SECOND_LAYER error:", e);
+                }
+            },
+            skip: null
+        },
+        PUNISH: {
+            enter() { UI.setHTML('punish-stage', CONFIG.TEXT.PUNISH(3)); UI.show('punish-stage'); setTimeout(() => window.GameReset(), CONFIG.TIME.PUNISH); }, skip: null
+        }
+    },
+
+    // ✨ 修復跑馬燈加速問題：利用真實時間計算，螢幕切換 120Hz 也不會影響速度
+    scroll(lastTime) {
+        const now = performance.now();
+        const dt = lastTime ? (now - lastTime) : 16.66;
+        const velocity = 0.072; // 穩定的捲動速度
+        this.ctx.creditsY -= velocity * dt;
+        
+        DOM.get('credits-container').style.transform = `translateY(${this.ctx.creditsY}px)`;
+        if (-this.ctx.creditsY > this.ctx.maxH) this.transition('END_NORMAL');
+        else TaskManager.requestAnimationFrame(() => this.scroll(now));
+    },
+
+    transition(newState) {
+        if (!this.states[newState]) return;
+        TaskManager.abortAll();
+        this.current = newState;
+        this.states[newState].enter();
+    },
+
+    skip() {
+        if (!this.current) return;
+        
+        // 嚴格阻擋 CREDITS 階段的任何跳過行為
+        if (this.current === 'CREDITS') return;
+
+        const next = this.states[this.current].skip;
+        
+        if (this.current === 'READY') {
+            VideoManager.grantAuth();
+            UI.forceHide('main-box'); UI.forceHide('start-stage');
+        } else if (this.current === 'FAKE_GAME') {
+            UI.forceHide('dialogue-stage');
+        } else if (this.current === 'REWARD_LOAD') {
+            UI.forceHide('main-box');
+        }
+
+        if (typeof next === 'function') next();
+        else if (typeof next === 'string') this.transition(next);
+    }
+};
+
+// ==========================================
+// Bootstrap
+// ==========================================
+DOM.init(); UI.buildCredits(); VideoManager.init(); InputManager.init();
+DOM.get('retry-btn').onclick = () => FSM.transition('LOAD2');
+DOM.get('start-game-btn').onclick = () => { VideoManager.grantAuth(); FSM.transition('FAKE_GAME'); };
+
+FSM.transition('LOAD1');
+</script>
+</body>
+</html>
+
+
+```
+                    if (nines < 97) TaskManager.setTimeout(stepNines, nines < 92 ? CONFIG.TIME.NINES_FAST : CONFIG.TIME.NINES_SLOW);
+                    else TaskManager.setTimeout(onComplete, CONFIG.TIME.WAIT_ERROR);
+                };
+                TaskManager.setTimeout(stepNines, 1000);
+            }
+        }, 500);
+    }
+};
+
+// ==========================================
+// 6. InputManager
+// ==========================================
+const InputManager = {
+    errors: 0,
+    lastTime: Date.now(),
+    konamiIdx: 0,
+    
+    init() {
+        const updateTime = () => { this.lastTime = Date.now(); };
+        document.addEventListener('mousemove', updateTime);
+        document.addEventListener('touchstart', updateTime, { passive: true });
+
+        const punishAction = () => {
+            this.errors++;
+            UI.setHTML('punish-stage', CONFIG.TEXT.PUNISH(this.errors));
+            UI.show('punish-stage');
+
+            if (this.errors < 3) {
+                TaskManager.setTimeout(() => UI.hide('punish-stage'), 1000);
+            } else {
+                FSM.transition('PUNISH');
+            }
+        };
+
+        document.addEventListener('keydown', e => {
+            updateTime();
+            if (['END_NORMAL', 'END_SECRET', 'PUNISH', 'SECOND_LAYER'].includes(FSM.current)) return;
+            if (e.altKey && e.key.toLowerCase() === 'q') { e.preventDefault(); FSM.skip(); return; }
+
+            if (e.key === CONFIG.KEYS.KONAMI[this.konamiIdx]) {
+                this.konamiIdx++;
+                if (this.konamiIdx === CONFIG.KEYS.KONAMI.length) {
+                    this.konamiIdx = 0;
+                    UI.setHTML('punish-stage', "你是不是太閒了");
+                    UI.show('punish-stage');
+                    TaskManager.setTimeout(() => { if (FSM.current !== 'PUNISH') UI.hide('punish-stage'); }, 2000);
+                    return; 
+                }
+            } else {
+                this.konamiIdx = 0; 
+            }
+
+            if (CONFIG.KEYS.WHITELIST.has(e.key) || e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || (e.ctrlKey && ['+','=','-'].includes(e.key))) return;
+            
+            e.preventDefault();
+            punishAction();
+        });
+
+        document.addEventListener('touchstart', e => {
+            updateTime();
+            if (['END_NORMAL', 'END_SECRET', 'PUNISH', 'SECOND_LAYER'].includes(FSM.current)) return;
+            
+            const isInteractive = e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('#skip-zone') || e.target.id === 'secret-trigger';
+            if (isInteractive) return;
+
+            e.preventDefault();
+            punishAction();
+        }, { passive: false });
+        
+        const skipZone = DOM.get('skip-zone');
+        const handleSkip = (e) => {
+            e.preventDefault(); e.stopPropagation(); 
+            FSM.skip();
+        };
+        if(skipZone){
+            skipZone.addEventListener('mousedown', handleSkip, { capture: true });
+            skipZone.addEventListener('touchstart', handleSkip, { capture: true, passive: false });
+        }
+    }
+};
+
+// ==========================================
+// 7. VideoManager
+// ==========================================
+const VideoManager = {
+    player: null, ready: false, started: false,
+    init() {
+        window.onYouTubeIframeAPIReady = () => {
+            this.player = new YT.Player('yt-player', {
+                videoId: 'dQw4w9WgXcQ',
+                playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, modestbranding: 1, rel: 0 },
+                events: {
+                    onStateChange: (e) => {
+                        if (e.data === YT.PlayerState.PLAYING && !this.started && FSM.current === 'RICKROLL') {
+                            this.started = true;
+                        }
+                    }
+                }
+            });
+        };
+    },
+    grantAuth() {
+        if (this.player && this.player.playVideo) {
+            this.player.mute(); this.player.playVideo();
+            setTimeout(() => { this.player.pauseVideo(); this.player.unMute(); this.player.seekTo(0); }, 150);
+        }
+    },
+    play() { if (this.player && this.player.playVideo) this.player.playVideo(); },
+    fade() {
+        if (!this.player || !this.player.getVolume) return;
+        let v = this.player.getVolume();
+        if (v <= 0) { this.player.pauseVideo(); return; }
+        const step = v / (3000 / 50); 
+        const iv = TaskManager.setInterval(() => {
+            v -= step;
+            if (v <= 0) { this.player.setVolume(0); this.player.pauseVideo(); TaskManager.clearInterval(iv); }
+            else { this.player.setVolume(v); }
+        }, 50);
+    }
+};
+
+// ==========================================
+// 8. Game FSM
+// ==========================================
+const FSM = {
+    current: null, ctx: { creditsY: 0, speed: 1, maxH: 0, creditsSkipped: false },
+
+    states: {
+        LOAD1: {
+            enter() { UI.show('main-box'); ProgressSystem.run(false, () => FSM.transition('ERROR')); },
+            skip: 'ERROR'
+        },
+        ERROR: {
+            enter() { UI.setTheme('ERROR'); UI.setText('percent-text', CONFIG.TEXT.ERR_PCT); UI.setText('hint', CONFIG.TEXT.ERR_HINT); UI.show('retry-btn'); },
+            skip: 'LOAD2'
+        },
+        LOAD2: {
+            enter() { ProgressSystem.run(false, () => FSM.transition('READY')); },
+            skip: 'READY'
+        },
+        READY: {
+            async enter() {
+                try {
+                    UI.setTheme('SUCCESS'); UI.setHTML('percent-text', '100<span class="percent-sign">%</span>'); UI.setText('hint', CONFIG.TEXT.READY);
+                    await TaskManager.sleep(2000); UI.hide('main-box');
+                    await TaskManager.sleep(CONFIG.TIME.FADE); DOM.get('main-box').classList.add('hidden');
+                    UI.show('bg-layer'); UI.show('start-stage');
+                } catch(e) {}
+            }, skip: 'FAKE_GAME'
+        },
+        FAKE_GAME: {
+            async enter() {
+                try {
+                    UI.hide('start-stage'); UI.show('dialogue-stage'); UI.setStyleClass('center-text', 'txt-normal');
+                    let dc = 0; 
+                    
+                    const fakeGameTimer = TaskManager.setInterval(() => { 
+                        dc=(dc+1)%4; 
+                        UI.setHTML('center-text', `${CONFIG.TEXT.FAKE_GAME}<span class="loading-dots">${".".repeat(dc)}</span>`); 
+                    }, 400);
+                    
+                    await TaskManager.sleep(CONFIG.TIME.WAIT_GAME);
+                    
+                    TaskManager.clearInterval(fakeGameTimer);
+                    
+                    UI.hide('center-text'); await TaskManager.sleep(500);
+                    
+                    UI.setStyleClass('center-text', 'txt-dialogue');
+                    for (let i=0; i<CONFIG.TEXT.DIALOGUES.length; i++) {
+                        UI.setText('center-text', CONFIG.TEXT.DIALOGUES[i]); UI.show('center-text');
+                        await TaskManager.sleep(i===0 ? 7000:2000); UI.hide('center-text'); await TaskManager.sleep(500);
+                    }
+                    FSM.transition('REWARD_LOAD');
+                } catch(e) {}
+            }, skip: 'REWARD_LOAD'
+        },
+        REWARD_LOAD: {
+            enter() { UI.hide('dialogue-stage'); UI.show('main-box'); DOM.get('main-box').classList.remove('hidden'); ProgressSystem.run(true, () => FSM.transition('COUNTDOWN')); },
+            skip: 'COUNTDOWN'
+        },
+        COUNTDOWN: {
+            async enter() {
+                try {
+                    UI.setTheme('SUCCESS'); UI.setHTML('percent-text', '100<span class="percent-sign">%</span>'); UI.setText('hint', CONFIG.TEXT.REWARD_READY);
+                    await TaskManager.sleep(1000); UI.hide('main-box'); await TaskManager.sleep(1000);
+                    UI.show('dialogue-stage'); UI.setStyleClass('center-text', 'txt-countdown');
+                    for (let num of CONFIG.TEXT.COUNTDOWN) {
+                        UI.setText('center-text', num); UI.show('center-text'); await TaskManager.sleep(1000);
+                        UI.hide('center-text'); await TaskManager.sleep(500);
+                    }
+                    FSM.transition('RICKROLL');
+                } catch(e) {}
+            }, skip: null
+        },
+        RICKROLL: {
+            enter() {
+                UI.hide('dialogue-stage'); UI.hide('bg-layer'); UI.show('rickroll-stage');
+                VideoManager.play();
+                
+                TaskManager.setTimeout(() => UI.show('rick-text'), 500);
+                TaskManager.setTimeout(() => FSM.transition('CREDITS'), CONFIG.TIME.WAIT_RICK);
+            }, skip: 'CREDITS'
+        },
+        CREDITS: {
+            enter() {
+                UI.hide('rick-text'); UI.show('credits-stage');
+                FSM.ctx.creditsY = 0; FSM.ctx.speed = 1.2; FSM.ctx.creditsSkipped = false;
+                TaskManager.setTimeout(() => { FSM.ctx.maxH = DOM.get('credits-container').offsetHeight; FSM.scroll(); }, CONFIG.TIME.CREDIT_DELAY);
+            }, skip() { FSM.ctx.speed = 30; FSM.ctx.creditsSkipped = true; }
+        },
+        END_NORMAL: {
+            enter() {
+                VideoManager.fade(); UI.hide('credits-stage');
+                UI.setHTML('ending-content', `<div class="end-title">${CONFIG.TEXT.END_NORMAL}</div><button class="action-btn btn-red" id="normal-replay-btn">再玩一次</button>`);
+                UI.show('ending-stage'); DOM.get('ending-stage').style.background = '#000';
+                
+                TaskManager.setTimeout(() => {
+                    const btn = document.getElementById('normal-replay-btn');
+                    if (btn) btn.onclick = () => window.GameReset();
+                }, 100);
+            }, skip: null
+        },
+        END_SECRET: {
+            async enter() {
+                try {
+                    VideoManager.fade(); UI.hide('rickroll-stage'); UI.hide('credits-stage');
+                    UI.setHTML('ending-content', ''); 
+                    UI.show('bg-layer'); UI.show('ending-stage'); DOM.get('ending-stage').style.background = 'transparent';
+                    
+                    await TaskManager.sleep(CONFIG.TIME.SECRET_DELAY); 
+                    UI.setHTML('ending-content', `<div id="alt-f4-text">${CONFIG.TEXT.END_SECRET}</div>`);
+                } catch(e) {}
+            }, skip: null
+        },
+        SECOND_LAYER: {
+            async enter() {
+                try {
+                    VideoManager.fade(); UI.hide('rickroll-stage'); UI.hide('credits-stage');
+                    
+                    const bg = DOM.get('bg-layer');
+                    bg.style.filter = 'brightness(0.4) grayscale(0.9)';
+                    UI.show('bg-layer');
+                    
+                    UI.setHTML('ending-content', `<div id="l2-text" class="txt-dialogue transition-base fade-out" style="color:#fff; text-align:center; padding:20px;"></div>`);
+                    UI.show('ending-stage'); DOM.get('ending-stage').style.background = 'transparent';
+
+                    const txt = document.getElementById('l2-text');
+                    const say = async (t, delay=2000) => { txt.innerHTML = t; txt.classList.remove('fade-out'); txt.classList.add('fade-in'); if(delay>0) await TaskManager.sleep(delay); };
+                    const hide = async (delay=500) => { txt.classList.remove('fade-in'); txt.classList.add('fade-out'); if(delay>0) await TaskManager.sleep(delay); };
+
+                    await TaskManager.sleep(1500);
+                    await say("你終於來到這裡", 2500); await hide();
+                    await say("這裡沒有提示", 2000); await hide();
+                    await say("只有規則", 2000); await hide();
+
+                    await say("不要動", 5000); 
+                    await hide(500);
+
+                    await say("可以動了", 1500); 
+                    await hide(500);
+
+                    await TaskManager.sleep(3000);
+
+                    await say("你開始觀察了", 2000); await hide();
+                    await say("這裡只是結束前的測試", 3000); await hide();
+
+                    UI.setHTML('ending-content', `
+                        <div class="end-title">你通關了</div>
+                        <button class="action-btn btn-blue fade-out" id="real-btn">再玩一次</button>
+                    `);
+
+                    TaskManager.setTimeout(()=>{
+                        const b = document.getElementById('real-btn');
+                        if(b) { 
+                            b.classList.remove('fade-out'); b.classList.add('fade-in');
+                            b.onclick = () => window.GameReset();
+                        }
+                    }, 500);
+
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.log("SECOND_LAYER error:", e);
+                }
+            },
+            skip: null
+        },
+        PUNISH: {
+            enter() { UI.setHTML('punish-stage', CONFIG.TEXT.PUNISH(3)); UI.show('punish-stage'); setTimeout(() => window.GameReset(), CONFIG.TIME.PUNISH); }, skip: null
+        }
+    },
+
+    scroll() {
+        this.ctx.creditsY -= this.ctx.speed;
+        DOM.get('credits-container').style.transform = `translateY(${this.ctx.creditsY}px)`;
+        if (-this.ctx.creditsY > this.ctx.maxH) this.transition('END_NORMAL');
+        else TaskManager.requestAnimationFrame(() => this.scroll());
+    },
+
+    transition(newState) {
+        if (!this.states[newState]) return;
+        TaskManager.abortAll();
+        this.current = newState;
+        this.states[newState].enter();
+    },
+
+    skip() {
+        if (!this.current) return;
+        const next = this.states[this.current].skip;
+        
+        if (this.current === 'READY') {
+            VideoManager.grantAuth();
+            UI.forceHide('main-box'); UI.forceHide('start-stage');
+        } else if (this.current === 'FAKE_GAME') {
+            UI.forceHide('dialogue-stage');
+        } else if (this.current === 'REWARD_LOAD') {
+            UI.forceHide('main-box');
+        }
+
+        if (typeof next === 'function') next();
+        else if (typeof next === 'string') this.transition(next);
+    }
+};
+
+// ==========================================
+// Bootstrap
+// ==========================================
+DOM.init(); UI.buildCredits(); VideoManager.init(); InputManager.init();
+DOM.get('retry-btn').onclick = () => FSM.transition('LOAD2');
+DOM.get('start-game-btn').onclick = () => { VideoManager.grantAuth(); FSM.transition('FAKE_GAME'); };
+
+FSM.transition('LOAD1');
+</script>
+</body>
+</html>
+
+
+```
         .fade-in { opacity: 1 !important; pointer-events: auto !important; }
         
         .transition-base { transition: opacity var(--t-fade) ease, transform var(--t-fade) ease, background var(--t-fade) ease, filter 2s ease; }
