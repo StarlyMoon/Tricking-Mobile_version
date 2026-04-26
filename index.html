@@ -90,7 +90,6 @@
             border: 1px solid rgba(255, 215, 0, 0.3) !important; box-shadow: 0 0 40px rgba(255, 215, 0, 0.15) !important;
         }
         
-        /* ERROR 狀態專屬微調 */
         .theme-error #percent-text { color: var(--error-red) !important; font-size: 32px !important; letter-spacing: 4px; }
         .theme-error #hint { color: var(--error-red) !important; font-weight: bold; margin-top: 10px; }
         .theme-error #progress-container { display: none !important; }
@@ -112,7 +111,6 @@
         
         #retry-btn { margin-top: 25px; transition: margin-top 0.3s ease; }
 
-        /* 對白與倒數區 */
         #center-text {
             color: #fff; font-weight: bold; text-align: center; padding: 0 20px;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9); transition: opacity 0.5s ease; 
@@ -121,14 +119,73 @@
         .txt-dialogue { font-size: clamp(26px, 7vw, 42px); white-space: normal; word-break: keep-all; text-shadow: 0 4px 15px rgba(0,0,0,0.8); }
         .txt-countdown { font-size: clamp(48px, 20vw, 80px); white-space: nowrap; }
 
-        /* Rickroll 區 */
-        #rickroll-stage { z-index: 50; background: #000; }
-        #click-blocker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 51; }
+        /* ==========================================
+           Rickroll 區 - YouTube 終極欺騙大法
+           ========================================== */
+        #rickroll-stage { 
+            z-index: 50; 
+            background: #000; 
+            overflow: hidden; 
+            pointer-events: auto; 
+        }
+
+        #yt-wrapper {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 125vw;  
+            height: 125vh; 
+            pointer-events: none !important; 
+        }
+        
+        #yt-wrapper iframe, #yt-player {
+            width: 100%;
+            height: 100%;
+            pointer-events: none !important; 
+        }
+
+        /* ✨ 偽裝按鈕介面 */
+        #fake-yt-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 60;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.3s ease; pointer-events: auto;
+        }
+        #fake-yt-hint {
+            color: #fff; font-size: 20px; margin-bottom: 25px; font-weight: bold; 
+            letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+        
+        /* 🎮 替換成使用者的自訂圖片圖標 */
+        #fake-yt-play {
+            width: 90px; 
+            height: 90px;
+            cursor: pointer;
+            border-radius: 50%; /* 讓它看起來像圓形按鈕 */
+            box-shadow: 0 4px 20px rgba(88,166,255,0.4); /* 加一點藍色科技感發光 */
+            transition: transform 0.1s, box-shadow 0.2s;
+            object-fit: cover;
+            background-color: #fff; /* 防止透明PNG顯示奇怪 */
+        }
+        #fake-yt-play:active { 
+            transform: scale(0.9); 
+            box-shadow: 0 2px 10px rgba(88,166,255,0.6);
+        }
+        
+        /* 透明防點擊層 */
+        #click-blocker { 
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; 
+            z-index: 55; 
+            background: rgba(0, 0, 0, 0.01); 
+            cursor: default;
+        }
+        
         #rick-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: clamp(30px, 8vw, 80px); font-weight: bold; color: #fff;
-            text-shadow: 0 4px 20px #000, 0 0 10px rgba(0,0,0,0.8); white-space: nowrap; z-index: 52;
+            text-shadow: 0 4px 20px #000, 0 0 10px rgba(0,0,0,0.8); white-space: nowrap; z-index: 99999;
             transition: opacity 1.5s ease;
+            pointer-events: none; 
         }
 
         /* 跑馬燈區 */
@@ -185,7 +242,16 @@
     </div>
 
     <div id="rickroll-stage" class="stage-overlay fade-out">
-        <div id="yt-player" style="width: 100%; height: 100%;"></div>
+        <div id="yt-wrapper">
+            <div id="yt-player"></div>
+        </div>
+        
+        <!-- ✨ 自訂圖標按鈕與無 ⚠️ 提示 -->
+        <div id="fake-yt-overlay" class="fade-out">
+            <div id="fake-yt-hint">獎勵已就緒，請接收</div>
+            <img id="fake-yt-play" src="https://png.pngtree.com/png-clipart/20190920/original/pngtree-start-icon-png-image_4629574.jpg" alt="Start Game">
+        </div>
+        
         <div id="click-blocker"></div>
         <div id="rick-text" class="fade-out">👻恭喜你又被騙了👻</div>
     </div>
@@ -213,7 +279,6 @@ window.GameReset = function() {
     try { window.top.location.reload(); } catch(e) {}
     try { window.location.reload(); } catch(e) {}
     
-    // 軟重置 fallback
     InputManager.errors = 0;
     InputManager.konamiIdx = 0;
     FSM.ctx.creditsSkipped = false;
@@ -260,7 +325,7 @@ const CONFIG = {
         "其實根本沒有遊戲師","整個都是假的師","你還在等師","但還是不想關掉師",
         { role: "鬼畜入口設計師", secret: true },
         "主畫面其實有東西可以按師","看起來不能點不代表不能點師","有耐心的人才進得去師",
-        "倒數三秒欺騙師","結局反轉設計師","影片強制播放師","無法暫停設計師",
+        "結局反轉設計師","影片強制播放師","無法暫停設計師",
         "逃不掉機制工程師","Bug 無限生成器","Bug 偶爾修好的人","免費但代價是時間師",
         "隨緣行銷大師","還沒關掉頁面的你師","明知道被騙還繼續看師",
         { role: "👁 有東西一直在那裡 👁", name: "" },
@@ -281,7 +346,7 @@ const DOM = {
         const ids = ['bg-layer', 'main-box', 'percent-text', 'bar-fill', 'progress-container', 'hint', 'retry-btn', 
                      'start-stage', 'start-game-btn', 'dialogue-stage', 'center-text', 'rickroll-stage', 'rick-text', 
                      'credits-stage', 'credits-container', 'credits-list', 'ending-stage', 'ending-content', 
-                     'punish-stage', 'skip-zone'];
+                     'punish-stage', 'skip-zone', 'fake-yt-overlay', 'fake-yt-play'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if(el) this.cache[id] = el;
@@ -461,7 +526,7 @@ const InputManager = {
             updateTime();
             if (['END_NORMAL', 'END_SECRET', 'PUNISH', 'SECOND_LAYER'].includes(FSM.current)) return;
             
-            const isInteractive = e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('#skip-zone') || e.target.id === 'secret-trigger';
+            const isInteractive = e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('#skip-zone') || e.target.id === 'secret-trigger' || e.target.closest('#fake-yt-play');
             if (isInteractive) return;
 
             e.preventDefault();
@@ -490,10 +555,18 @@ const VideoManager = {
         window.onYouTubeIframeAPIReady = () => {
             this.player = new YT.Player('yt-player', {
                 videoId: 'dQw4w9WgXcQ',
-                playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, modestbranding: 1, rel: 0 },
+                playerVars: { 
+                    autoplay: 0, 
+                    controls: 0, 
+                    disablekb: 1, 
+                    playsinline: 1, 
+                    modestbranding: 1, 
+                    rel: 0,
+                    iv_load_policy: 3 
+                },
                 events: {
                     onStateChange: (e) => {
-                        if (e.data === YT.PlayerState.PLAYING && !this.started && FSM.current === 'RICKROLL') {
+                        if (e.data === YT.PlayerState.PLAYING && !this.started) {
                             this.started = true;
                         }
                     }
@@ -503,11 +576,18 @@ const VideoManager = {
     },
     grantAuth() {
         if (this.player && this.player.playVideo) {
-            this.player.mute(); this.player.playVideo();
+            this.player.mute(); 
+            this.player.playVideo();
             setTimeout(() => { this.player.pauseVideo(); this.player.unMute(); this.player.seekTo(0); }, 150);
         }
     },
-    play() { if (this.player && this.player.playVideo) this.player.playVideo(); },
+    showAndPlay() { 
+        if (this.player && this.player.playVideo) {
+            this.player.seekTo(0);
+            this.player.unMute(); 
+            this.player.playVideo();
+        } 
+    },
     fade() {
         if (!this.player || !this.player.getVolume) return;
         let v = this.player.getVolume();
@@ -582,10 +662,10 @@ const FSM = {
             }, skip: 'REWARD_LOAD'
         },
         REWARD_LOAD: {
-            enter() { UI.hide('dialogue-stage'); UI.show('main-box'); DOM.get('main-box').classList.remove('hidden'); ProgressSystem.run(true, () => FSM.transition('COUNTDOWN')); },
-            skip: 'COUNTDOWN'
+            enter() { UI.hide('dialogue-stage'); UI.show('main-box'); DOM.get('main-box').classList.remove('hidden'); ProgressSystem.run(true, () => FSM.transition('REWARD_READY_DELAY')); },
+            skip: 'REWARD_READY_DELAY'
         },
-        COUNTDOWN: {
+        REWARD_READY_DELAY: {
             async enter() {
                 try {
                     UI.setTheme('SUCCESS'); 
@@ -593,24 +673,37 @@ const FSM = {
                     DOM.get('bar-fill').style.width = '100%';
                     UI.setText('hint', CONFIG.TEXT.REWARD_READY);
                     
-                    await TaskManager.sleep(1000); UI.hide('main-box'); await TaskManager.sleep(1000);
-                    UI.show('dialogue-stage'); UI.setStyleClass('center-text', 'txt-countdown');
-                    for (let num of CONFIG.TEXT.COUNTDOWN) {
-                        UI.setText('center-text', num); UI.show('center-text'); await TaskManager.sleep(1000);
-                        UI.hide('center-text'); await TaskManager.sleep(500);
-                    }
-                    FSM.transition('RICKROLL');
+                    await TaskManager.sleep(1500); 
+                    UI.hide('main-box'); 
+                    await TaskManager.sleep(800);
+                    
+                    FSM.transition('FAKE_PLAYER');
                 } catch(e) {}
             }, skip: null
         },
+        
+        FAKE_PLAYER: {
+            enter() {
+                UI.hide('dialogue-stage'); UI.hide('bg-layer'); 
+                UI.show('rickroll-stage');
+                UI.show('fake-yt-overlay'); 
+
+                const playBtn = DOM.get('fake-yt-play');
+                playBtn.onclick = () => {
+                    FSM.transition('RICKROLL');
+                };
+            },
+            skip() { return; } 
+        },
+
         RICKROLL: {
             enter() {
-                UI.hide('dialogue-stage'); UI.hide('bg-layer'); UI.show('rickroll-stage');
-                VideoManager.play();
+                UI.hide('fake-yt-overlay'); 
+                VideoManager.showAndPlay(); 
                 
                 TaskManager.setTimeout(() => UI.show('rick-text'), 500);
                 TaskManager.setTimeout(() => FSM.transition('CREDITS'), CONFIG.TIME.WAIT_RICK);
-            }, skip: 'CREDITS'
+            }, skip() { return; } 
         },
         CREDITS: {
             enter() {
