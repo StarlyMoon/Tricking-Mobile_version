@@ -246,7 +246,7 @@
             <div id="yt-player"></div>
         </div>
         
-        <!-- ✨ 自訂圖標按鈕與無 ⚠️ 提示 -->
+        <!-- ✨ 終極假播放按鈕區域 -->
         <div id="fake-yt-overlay" class="fade-out">
             <div id="fake-yt-hint">獎勵已就緒，請接收</div>
             <img id="fake-yt-play" src="https://png.pngtree.com/png-clipart/20190920/original/pngtree-start-icon-png-image_4629574.jpg" alt="Start Game">
@@ -312,7 +312,7 @@ const CONFIG = {
         HINTS: ["正在載入物理引擎", "正在載入細節紋理", "正在載入光影", "正在載入世界地形", "正在載入背景音樂與音效", "正在同步多人連線數據", "遊戲執行中"],
         ERR_PCT: "ERROR", ERR_HINT: "伺服器無回應 (Code: 0x8004210a)",
         READY: "資源載入完畢...", REWARD: "正在加載獎勵", REWARD_READY: "獎勵加載完成...",
-        FAKE_GAME: "正在進入遊戲", DIALOGUES: ["👻恭喜你被騙了👻", "既然你這麼有毅力", "最後的獎勵就歸你"],
+        FAKE_GAME: "正在進入遊戲", DIALOGUES: ["👻恭喜你被騙了👻", "其實", "按右上角可以跳過", "既然你這麼有毅力", "最後的獎勵就歸你"],
         COUNTDOWN: ["3", "2", "1"],
         PUNISH: (c) => c < 3 ? `怎麼亂按 ${c}/3` : `怎麼亂按 3/3<br><br>全部重來！`,
         END_NORMAL: "《即將開始…》", END_SECRET: "🎊恭喜你發現彩蛋🎊"
@@ -324,7 +324,7 @@ const CONFIG = {
         "「再一下就好」催眠師","伺服器假死模擬師","希望製造師","信任重建師",
         "其實根本沒有遊戲師","整個都是假的師","你還在等師","但還是不想關掉師",
         { role: "鬼畜入口設計師", secret: true },
-        "主畫面其實有東西可以按師","看起來不能點不代表不能點師","有耐心的人才進得去師",
+        "其實還有東西可以按師","看起來不能點不代表不能點師","有耐心的人才進得去師",
         "結局反轉設計師","影片強制播放師","無法暫停設計師",
         "逃不掉機制工程師","Bug 無限生成器","Bug 偶爾修好的人","免費但代價是時間師",
         "隨緣行銷大師","還沒關掉頁面的你師","明知道被騙還繼續看師",
@@ -652,16 +652,17 @@ const FSM = {
                     UI.hide('center-text'); await TaskManager.sleep(500);
                     
                     UI.setStyleClass('center-text', 'txt-dialogue');
-                    for (let i=0; i<CONFIG.TEXT.DIALOGUES.length; i++) {
-                        UI.setText('center-text', CONFIG.TEXT.DIALOGUES[i]); UI.show('center-text');
-                        await TaskManager.sleep(i===0 ? 10000 : 2000); 
-                        UI.hide('center-text'); await TaskManager.sleep(500);
-                    }
-                    FSM.transition('REWARD_LOAD');
-                } catch(e) {}
-            }, skip: 'REWARD_LOAD'
-        },
-        REWARD_LOAD: {
+                for (let i=0; i<CONFIG.TEXT.DIALOGUES.length; i++) {
+                    UI.setText('center-text', CONFIG.TEXT.DIALOGUES[i]); UI.show('center-text');
+                    // 確保只有「恭喜你被騙了」這句話會停留 10 秒
+                    await TaskManager.sleep(CONFIG.TEXT.DIALOGUES[i] === "👻恭喜你被騙了👻" ? 10000 : 2000); 
+                    UI.hide('center-text'); await TaskManager.sleep(500);
+                }
+                FSM.transition('REWARD_LOAD');
+            } catch(e) {}
+        }, skip: 'REWARD_LOAD'
+    },
+    REWARD_LOAD: {
             enter() { UI.hide('dialogue-stage'); UI.show('main-box'); DOM.get('main-box').classList.remove('hidden'); ProgressSystem.run(true, () => FSM.transition('REWARD_READY_DELAY')); },
             skip: 'REWARD_READY_DELAY'
         },
@@ -769,8 +770,7 @@ const FSM = {
 
                     await TaskManager.sleep(1000);
 
-                    await say("你不需要再遵守規則了", 2000); await hide();
-                    await say("恭喜你", 3000); await hide();
+                    await say("因為", 3000); await hide(); // 修改處
 
                     UI.setHTML('ending-content', `
                         <div class="end-title">你通關了</div>
