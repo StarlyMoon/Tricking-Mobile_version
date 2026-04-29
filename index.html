@@ -154,6 +154,7 @@
         #fake-yt-hint {
             color: #fff; font-size: 20px; margin-bottom: 25px; font-weight: bold; 
             letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+            transition: opacity 0.3s ease;
         }
         
         /* 🎮 替換成使用者的自訂圖片圖標 */
@@ -161,11 +162,11 @@
             width: 90px; 
             height: 90px;
             cursor: pointer;
-            border-radius: 50%; /* 讓它看起來像圓形按鈕 */
-            box-shadow: 0 4px 20px rgba(88,166,255,0.4); /* 加一點藍色科技感發光 */
-            transition: transform 0.1s, box-shadow 0.2s;
+            border-radius: 50%; 
+            box-shadow: 0 4px 20px rgba(88,166,255,0.4); 
+            transition: transform 0.1s, box-shadow 0.2s, opacity 0.3s ease;
             object-fit: cover;
-            background-color: #fff; /* 防止透明PNG顯示奇怪 */
+            background-color: #fff; 
         }
         #fake-yt-play:active { 
             transform: scale(0.9); 
@@ -324,7 +325,7 @@ const CONFIG = {
         "「再一下就好」催眠師","伺服器假死模擬師","希望製造師","信任重建師",
         "其實根本沒有遊戲師","整個都是假的師","你還在等師","但還是不想關掉師",
         { role: "鬼畜入口設計師", secret: true },
-        "其實還有東西可以按師","看起來不能點不代表不能點師","有耐心的人才進得去師",
+        "主畫面其實有東西可以按師","看起來不能點不代表不能點師","有耐心的人才進得去師",
         "結局反轉設計師","影片強制播放師","無法暫停設計師",
         "逃不掉機制工程師","Bug 無限生成器","Bug 偶爾修好的人","免費但代價是時間師",
         "隨緣行銷大師","還沒關掉頁面的你師","明知道被騙還繼續看師",
@@ -346,7 +347,7 @@ const DOM = {
         const ids = ['bg-layer', 'main-box', 'percent-text', 'bar-fill', 'progress-container', 'hint', 'retry-btn', 
                      'start-stage', 'start-game-btn', 'dialogue-stage', 'center-text', 'rickroll-stage', 'rick-text', 
                      'credits-stage', 'credits-container', 'credits-list', 'ending-stage', 'ending-content', 
-                     'punish-stage', 'skip-zone', 'fake-yt-overlay', 'fake-yt-play'];
+                     'punish-stage', 'skip-zone', 'fake-yt-overlay', 'fake-yt-play', 'fake-yt-hint'];
         ids.forEach(id => {
             const el = document.getElementById(id);
             if(el) this.cache[id] = el;
@@ -574,13 +575,21 @@ const VideoManager = {
             });
         };
     },
-    grantAuth() {
+    // ✨ 第一階段：按下「開始遊戲」時，靜音播放偷跑預載
+    startBackgroundPlayback() {
         if (this.player && this.player.playVideo) {
             this.player.mute(); 
-            this.player.playVideo();
-            setTimeout(() => { this.player.pauseVideo(); this.player.unMute(); this.player.seekTo(0); }, 150);
+            this.player.playVideo(); 
         }
     },
+    // ✨ 第二階段：在獎勵畫面100%時，偷偷拉回開頭
+    preSeek() {
+        if (this.player && this.player.seekTo) {
+            this.player.seekTo(0); 
+            this.player.playVideo(); // 繼續保持播放狀態
+        }
+    },
+    // ✨ 第三階段：點下假 Start 按鈕，直接拉回開頭並解開靜音，0延遲噴發！
     showAndPlay() { 
         if (this.player && this.player.playVideo) {
             this.player.seekTo(0);
@@ -652,17 +661,16 @@ const FSM = {
                     UI.hide('center-text'); await TaskManager.sleep(500);
                     
                     UI.setStyleClass('center-text', 'txt-dialogue');
-                for (let i=0; i<CONFIG.TEXT.DIALOGUES.length; i++) {
-                    UI.setText('center-text', CONFIG.TEXT.DIALOGUES[i]); UI.show('center-text');
-                    // 確保只有「恭喜你被騙了」這句話會停留 10 秒
-                    await TaskManager.sleep(CONFIG.TEXT.DIALOGUES[i] === "👻恭喜你被騙了👻" ? 10000 : 2000); 
-                    UI.hide('center-text'); await TaskManager.sleep(500);
-                }
-                FSM.transition('REWARD_LOAD');
-            } catch(e) {}
-        }, skip: 'REWARD_LOAD'
-    },
-    REWARD_LOAD: {
+                    for (let i=0; i<CONFIG.TEXT.DIALOGUES.length; i++) {
+                        UI.setText('center-text', CONFIG.TEXT.DIALOGUES[i]); UI.show('center-text');
+                        await TaskManager.sleep(CONFIG.TEXT.DIALOGUES[i] === "👻恭喜你被騙了👻" ? 10000 : 2000); 
+                        UI.hide('center-text'); await TaskManager.sleep(500);
+                    }
+                    FSM.transition('REWARD_LOAD');
+                } catch(e) {}
+            }, skip: 'REWARD_LOAD'
+        },
+        REWARD_LOAD: {
             enter() { UI.hide('dialogue-stage'); UI.show('main-box'); DOM.get('main-box').classList.remove('hidden'); ProgressSystem.run(true, () => FSM.transition('REWARD_READY_DELAY')); },
             skip: 'REWARD_READY_DELAY'
         },
@@ -673,6 +681,9 @@ const FSM = {
                     UI.setHTML('percent-text', '100<span class="percent-sign">%</span>'); 
                     DOM.get('bar-fill').style.width = '100%';
                     UI.setText('hint', CONFIG.TEXT.REWARD_READY);
+                    
+                    // ✨ 偷偷預載：把背景播放的影片拉回開頭
+                    VideoManager.preSeek();
                     
                     await TaskManager.sleep(1500); 
                     UI.hide('main-box'); 
@@ -690,6 +701,12 @@ const FSM = {
                 UI.show('fake-yt-overlay'); 
 
                 const playBtn = DOM.get('fake-yt-play');
+                const hint = DOM.get('fake-yt-hint');
+                
+                // 確保按鈕跟提示字是顯示狀態
+                playBtn.classList.remove('fade-out');
+                hint.classList.remove('fade-out');
+
                 playBtn.onclick = () => {
                     FSM.transition('RICKROLL');
                 };
@@ -699,7 +716,10 @@ const FSM = {
 
         RICKROLL: {
             enter() {
+                // ✨ 這裡完全移除了黑布遮擋邏輯！瞬間隱藏整個假介面！
                 UI.hide('fake-yt-overlay'); 
+                
+                // ✨ 瞬間拉回0秒並解開靜音，前奏直接噴出，直接面對 YouTube
                 VideoManager.showAndPlay(); 
                 
                 TaskManager.setTimeout(() => UI.show('rick-text'), 500);
@@ -770,7 +790,7 @@ const FSM = {
 
                     await TaskManager.sleep(1000);
 
-                    await say("因為", 3000); await hide(); // 修改處
+                    await say("因為", 3000); await hide(); 
 
                     UI.setHTML('ending-content', `
                         <div class="end-title">你通關了</div>
@@ -822,7 +842,7 @@ const FSM = {
         const next = this.states[this.current].skip;
         
         if (this.current === 'READY') {
-            VideoManager.grantAuth();
+            VideoManager.startBackgroundPlayback(); 
             UI.forceHide('main-box'); UI.forceHide('start-stage');
         } else if (this.current === 'FAKE_GAME') {
             UI.forceHide('dialogue-stage');
@@ -840,11 +860,11 @@ const FSM = {
 // ==========================================
 DOM.init(); UI.buildCredits(); VideoManager.init(); InputManager.init();
 DOM.get('retry-btn').onclick = () => FSM.transition('LOAD2');
-DOM.get('start-game-btn').onclick = () => { VideoManager.grantAuth(); FSM.transition('FAKE_GAME'); };
+
+// ✨ 第一階段：按下「開始遊戲」時，靜音播放偷跑預載
+DOM.get('start-game-btn').onclick = () => { VideoManager.startBackgroundPlayback(); FSM.transition('FAKE_GAME'); };
 
 FSM.transition('LOAD1');
 </script>
 </body>
 </html>
-
-
